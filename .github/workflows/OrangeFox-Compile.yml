@@ -15,6 +15,7 @@ on:
         default: '12.1'
         type: choice
         options:
+        - 14.1
         - 12.1
         - 11.0
       DEVICE_TREE:
@@ -71,7 +72,7 @@ jobs:
         sudo bash setup/android_build_env.sh
       
     - name: Set-up Manifest
-      if: inputs.MANIFEST_BRANCH == '11.0' || inputs.MANIFEST_BRANCH == '12.1'
+      if: inputs.MANIFEST_BRANCH == '11.0' || inputs.MANIFEST_BRANCH == '12.1' || inputs.MANIFEST_BRANCH == '14.1'
       run: |
         mkdir -p ${GITHUB_WORKSPACE}/OrangeFox
         cd ${GITHUB_WORKSPACE}/OrangeFox
@@ -90,12 +91,23 @@ jobs:
 
     - name: Building OrangeFox
       run: |
+              run: |
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
+
         set +e
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
+        export LC_ALL=C
         set -e
-        lunch twrp_${{ inputs.DEVICE_NAME }}-eng && make clean && mka adbd ${{ inputs.BUILD_TARGET }}image
+
+        if [[ "${{ inputs.MANIFEST_BRANCH }}" == "14.1" ]]; then
+          lunch twrp_${{ inputs.DEVICE_NAME }}-ap2a-eng
+        else
+          lunch twrp_${{ inputs.DEVICE_NAME }}-eng
+        fi
+
+        make clean
+        mka adbd ${{ inputs.BUILD_TARGET }}image
 
     - name: Set Release Properties
       run: |
